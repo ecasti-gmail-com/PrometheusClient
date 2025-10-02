@@ -4,6 +4,7 @@
 #include <WiFiUdp.h>
 #include <NTPClient.h>  // for NTP updates
 #include <WiFiClient.h> // for HTTP requests
+#include <ArduinoHttpClient.h>
 #include <ArduinoJson.h>
 #include <Adafruit_GFX.h>
 
