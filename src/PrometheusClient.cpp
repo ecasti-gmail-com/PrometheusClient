@@ -119,32 +119,9 @@ DynamicJsonDocument PrometheusClient::performPrometheusQuery(const char *metric,
   query += "&end=" + String(endTs);
   query += "&step=" + String(step);
   query += "s";
-/*
-  if (!client.connect(prometheusHost, prometheusPort))
-  {
-    DynamicJsonDocument errDoc(256);
-    errDoc["error"] = "connect_failed";
-    return errDoc;
-  }
-
-  String request = "POST /api/v1/query_range HTTP/1.1\r\n";
-  request += "Host: " + String(prometheusHost) + "\r\n";
-  request += "Content-Type: application/x-www-form-urlencoded\r\n";
-  request += "Content-Length: " + String(query.length()) + "\r\n";
-  request += "Connection: close\r\n";
-  request += "Accept-Encoding: identity\r\n";
-  request += "\r\n";
-  request += query;
-  // request += query;
-  Serial.println(request);
-  client.println(request);
-  client.println();
- 
-  */
 
   // Read response
   String contentType = "application/x-www-form-urlencoded";
-  String postData = "name=Alice&age=12";
   httpclient.post("/api/v1/query_range", contentType, query);
 
   String response;
@@ -152,30 +129,9 @@ DynamicJsonDocument PrometheusClient::performPrometheusQuery(const char *metric,
   char buf[bufSize];
 
   response = httpclient.responseBody();
-  Serial.println(response);
-  /*
-  while (client.connected() || client.available())
-  {
-    size_t len = client.readBytes(buf, bufSize);
-    response += String(buf).substring(0, len);
-  }
-    while (client.connected() || client.available())
-  {
-    size_t len = client.readBytes(buf, bufSize);
-    response += String(buf).substring(0, len);
-  }
-  client.stop();
-  Serial.println(response);
-  int bodyIndex = response.indexOf("\r\n\r\n");
-  if (bodyIndex >= 0)
-  {
-    response = response.substring(bodyIndex + 4);
-  }
-  int firstClosingBracket = response.indexOf('{');
-*/
+  //Serial.println(response);
 
   DynamicJsonDocument doc(96000);
-  //  auto err = deserializeJson(doc, response.substring(firstClosingBracket));
   auto err = deserializeJson(doc, response);
   if (err)
   {
@@ -201,8 +157,8 @@ int PrometheusClient::get_data(PrometheusClient::Record *arr)
 
       if (item.containsKey("metric") && item["metric"].containsKey("instance"))
       {
-        Serial.print("Instance: ");
-        Serial.println(item["metric"]["instance"].as<const char *>());
+      //  Serial.print("Instance: ");
+      //  Serial.println(item["metric"]["instance"].as<const char *>());
       }
       if (item.containsKey("values"))
       {
