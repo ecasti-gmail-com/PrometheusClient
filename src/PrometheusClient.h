@@ -17,6 +17,9 @@
 #define MAGENTA 0xF81F
 #define YELLOW 0xFFE0
 #define WHITE 0xFFFF
+#define LIGHTGREY 0xC638
+#define DARKGREY 0xAD34
+
 
 
 class PrometheusClient
@@ -58,7 +61,7 @@ private:
     char *title = "";
     char *prometheusHost = "192.168.2.8";
     int prometheusPort = 9090;
-
+    int getX(int W, int xOffset,  unsigned long ts,  unsigned long start,  unsigned long end);
     static WiFiUDP *ntpUDP;
     static NTPClient *timeClient;
     static bool ntpStarted;
