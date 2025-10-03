@@ -59,6 +59,11 @@ void PrometheusClient::setMetric(char *metric_p)
   this->metric = metric_p;
 }
 
+void PrometheusClient::setTitle(char *title_p)
+{
+  this->title = title_p;
+}
+
 void PrometheusClient::setHost(char *host, int port)
 {
   this->prometheusHost = host;
@@ -95,6 +100,56 @@ int PrometheusClient::refresh()
   return refreshCount;
 }
 
+bool PrometheusClient::getTimeseries(int range)
+{
+  float max, min;
+  // timeClient.update();   // update NTP
+  BufferCanvas c(this->buffer, this->width, this->height);
+  c.fillScreen(WHITE); // white background
+  c.drawLine(10, 0, 10, this->height - 1, BLACK);
+  c.drawLine(0, this->height - 10, this->width - 1, this->height - 10, BLACK);
+  c.setCursor(15, 1);
+  c.setTextColor(BLACK);
+  c.print(title);
+  // Get data
+  int count_r = get_data_range(records, range, range / ((this->width - 10) / 2));
+ // Serial.println(count_r);
+  // Get Max and Min
+  max = records[0].value;
+  min = records[0].value;
+  for (int i = 0; i < count_r; i++)
+  {
+    if (records[i].value > max)
+    {
+      max = records[i].value;
+    };
+    if (records[i].value < min)
+    {
+      min = records[i].value;
+    };
+  }
+  float divider = (max - min) / (this->height - 20);
+  //  Serial.print("min: ");
+  //  Serial.print(min);
+  //    Serial.print(" | max: ");
+  //  Serial.print(max);
+  //    Serial.print(" | Divider: ");
+  //  Serial.println(divider);
+  // Draw
+  int xx = 10;
+  int yy = 10;
+  int new_y, new_x;
+  for (int i = 0; i < count_r; i++)
+  {
+    new_y = this->height - (((records[i].value - min) / divider) + 10);
+    new_x = (i * 2) + 10;
+    c.drawLine(xx, yy, new_x, new_y, BLUE);
+    c.drawCircle(new_x, new_y, 1, BLUE);
+    yy = new_y;
+    xx = new_x;
+  }
+}
+
 void PrometheusClient::clearBuffer()
 {
   for (int i = 0; i < this->width * this->height; i++)
@@ -108,8 +163,7 @@ DynamicJsonDocument PrometheusClient::performPrometheusQuery(const char *metric,
   WiFiClient client;
   HttpClient httpclient = HttpClient(client, this->prometheusHost, this->prometheusPort);
 
-  
-  client.setTimeout(2000); 
+  client.setTimeout(2000);
   /// this->timeClient.forceUpdate();
   unsigned long endTs = timeClient->getEpochTime();
   unsigned long startTs = endTs - windowSeconds;
@@ -119,7 +173,7 @@ DynamicJsonDocument PrometheusClient::performPrometheusQuery(const char *metric,
   query += "&end=" + String(endTs);
   query += "&step=" + String(step);
   query += "s";
-
+ // Serial.println(query);
   // Read response
   String contentType = "application/x-www-form-urlencoded";
   httpclient.post("/api/v1/query_range", contentType, query);
@@ -143,11 +197,11 @@ DynamicJsonDocument PrometheusClient::performPrometheusQuery(const char *metric,
   return doc;
 }
 
-int PrometheusClient::get_data(PrometheusClient::Record *arr)
+int PrometheusClient::get_data_range(PrometheusClient::Record *arr, int range, int step)
 {
   int count_r = 0;
   // Example usage
-  DynamicJsonDocument result = performPrometheusQuery(metric, 6000,30);
+  DynamicJsonDocument result = performPrometheusQuery(metric, range, step);
   // Print part of result
   if (result.containsKey("status") && result["status"] == "success")
   {
@@ -157,8 +211,8 @@ int PrometheusClient::get_data(PrometheusClient::Record *arr)
 
       if (item.containsKey("metric") && item["metric"].containsKey("instance"))
       {
-      //  Serial.print("Instance: ");
-      //  Serial.println(item["metric"]["instance"].as<const char *>());
+        //  Serial.print("Instance: ");
+        //  Serial.println(item["metric"]["instance"].as<const char *>());
       }
       if (item.containsKey("values"))
       {
@@ -194,6 +248,7 @@ int PrometheusClient::get_data(PrometheusClient::Record *arr)
 
 bool PrometheusClient::drawOnBuffer(uint16_t *buffer, int16_t w, int16_t h)
 {
+  /*
   if (!buffer || w <= 0 || h <= 0)
     return false;
   int count_r = get_data(records);
@@ -207,6 +262,6 @@ bool PrometheusClient::drawOnBuffer(uint16_t *buffer, int16_t w, int16_t h)
     yy = records[i].value * 100;
     xx = i;
   }
-
+*/
   return true;
 }
