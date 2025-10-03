@@ -98,11 +98,13 @@ int PrometheusClient::refresh()
 bool PrometheusClient::getTimeseries(int range)
 {
   float max, min;
+  long ts_min, ts_max;
   // timeClient.update();   // update NTP
   BufferCanvas c(this->buffer, this->width, this->height);
   c.fillScreen(WHITE); // white background
   c.drawLine(10, 0, 10, this->height - 10, BLACK);
   c.drawLine(10, this->height - 10, this->width - 1, this->height - 10, BLACK);
+  c.drawLine(10, 10, this->width - 1, 10, BLACK);
   c.setCursor(15, 1);
   c.setTextColor(BLACK);
   c.print(title);
@@ -111,6 +113,28 @@ bool PrometheusClient::getTimeseries(int range)
   // Get Max and Min
   max = records[0].value;
   min = records[0].value;
+  // Get min and max timestamp
+  ts_min = records[0].timestamp;
+  ts_max = records[count_r - 1].timestamp;
+  // Draw vertical lines for hours
+  struct tm timeinfo;
+  for (long tt = (ts_min + 600); tt < (ts_max + 600); tt += 600)
+  {
+    time_t ti = (time_t) (tt - (tt % 600));
+    gmtime_r(&ti, &timeinfo);
+    int xi = getX(this->width, 10, ti, ts_min, ts_max);
+    c.drawLine(xi, 10, xi, this->height - 10, LIGHTGREY);
+    if ((ti % 3600) == 0)
+    {
+      c.drawLine(xi + 1, 10, xi + 1, this->height - 10, DARKGREY);
+      // c.drawLine(xi - 1, 10, xi - 1, this->height - 10, DARKGREY);
+      c.setCursor(xi - 10, this->height - 9);
+      c.print(timeinfo.tm_hour);
+      c.print(":00");
+    }
+  }
+
+  // Get min and max value
   for (int i = 0; i < count_r; i++)
   {
     if (records[i].value > max)
@@ -123,24 +147,36 @@ bool PrometheusClient::getTimeseries(int range)
     };
   }
   float divider = (max - min) / (this->height - 20);
-  if ( divider < 0.001 ) { divider = 0.001;};
-    Serial.print("min: ");
-    Serial.print(min);
-    Serial.print(" | max: ");
-    Serial.print(max);
-    Serial.print(" | Divider: ");
-    Serial.println(divider);
+  if (divider < 0.001)
+  {
+    divider = 0.001;
+  };
+  Serial.print("min: ");
+  Serial.print(min);
+  Serial.print(" | max: ");
+  Serial.print(max);
+  Serial.print(" | Divider: ");
+  Serial.println(divider);
   // Draw
   int xx = 10;
   int yy = 10;
   int new_y, new_x;
-  if (count_r > ((this->width -10 )/ 2) ) {count_r =  ((this->width  -10) / 2);} ;
+  if (count_r > ((this->width - 10) / 2))
+  {
+    count_r = ((this->width - 10) / 2);
+  };
   for (int i = 0; i < count_r; i++)
   {
     new_y = this->height - (((records[i].value - min) / divider) + 10);
-    if ( new_y > (this->height -1)) { new_y = this->height;};
-    if ( new_y <  0 ) { new_y = 0;};
-    new_x = (i * 2) + 10;
+    if (new_y > (this->height - 1))
+    {
+      new_y = this->height;
+    };
+    if (new_y < 0)
+    {
+      new_y = 0;
+    };
+    new_x = getX(this->width, 10, records[i].timestamp, ts_min, ts_max);
     c.drawLine(xx, yy, new_x, new_y, BLUE);
     c.drawCircle(new_x, new_y, 1, BLUE);
     yy = new_y;
@@ -166,13 +202,15 @@ DynamicJsonDocument PrometheusClient::performPrometheusQuery(const char *metric,
   /// this->timeClient.forceUpdate();
   unsigned long endTs = timeClient->getEpochTime();
   unsigned long startTs = endTs - windowSeconds;
+  /* to be moved */
+  // PrometheusClient::drawTimeGrid(this->width,this->height,10,startTs,endTs);
 
   String query = "query=" + String(metric);
   query += "&start=" + String(startTs);
   query += "&end=" + String(endTs);
   query += "&step=" + String(step);
   query += "s";
- // //Serial.println(query);
+  // //Serial.println(query);
   // Read response
   String contentType = "application/x-www-form-urlencoded";
   httpclient.post("/api/v1/query_range", contentType, query);
@@ -199,7 +237,6 @@ DynamicJsonDocument PrometheusClient::performPrometheusQuery(const char *metric,
 int PrometheusClient::get_data_range(PrometheusClient::Record *arr, int range, int step)
 {
   int count_r = 0;
-  // Example usage
   DynamicJsonDocument result = performPrometheusQuery(metric, range, step);
   // Print part of result
   if (result.containsKey("status") && result["status"] == "success")
@@ -230,16 +267,16 @@ int PrometheusClient::get_data_range(PrometheusClient::Record *arr, int range, i
   }
   else
   {
-    //Serial.println("Query failed: ");
-    // //Serial.println(result["data"]["result"]);
+    // Serial.println("Query failed: ");
+    //  //Serial.println(result["data"]["result"]);
 
-    //Serial.println("=== Prometheus result.data.result ===");
+    // Serial.println("=== Prometheus result.data.result ===");
     serializeJsonPretty(result, Serial); // nicely formatted
-    //Serial.println("\n===============================");
+    // Serial.println("\n===============================");
 
     if (result.containsKey("error"))
     {
-      //Serial.println(result["error"].as<const char *>());
+      // Serial.println(result["error"].as<const char *>());
     }
   }
   return count_r;
@@ -247,20 +284,20 @@ int PrometheusClient::get_data_range(PrometheusClient::Record *arr, int range, i
 
 bool PrometheusClient::drawOnBuffer(uint16_t *buffer, int16_t w, int16_t h)
 {
-  /*
-  if (!buffer || w <= 0 || h <= 0)
-    return false;
-  int count_r = get_data(records);
-  BufferCanvas c(this->buffer, this->width, this->height);
-  c.fillScreen(0xFFFF); // white background
-  int xx = 0;
-  int yy = 0;
-  for (int i = 0; i < count_r; i++)
-  {
-    c.drawLine(xx, yy, i, records[i].value * 100, 0x0000);
-    yy = records[i].value * 100;
-    xx = i;
-  }
-*/
+  /* TO BE REMOVED*/
   return true;
+}
+
+int PrometheusClient::getX(int W, int xOffset, unsigned long ts, unsigned long start, unsigned long end)
+{
+  int x = xOffset + (int)(((ts - start) * (W - xOffset)) / (end - start));
+  if (x < 0)
+  {
+    x = 0;
+  };
+  if (x > W)
+  {
+    x = W;
+  };
+  return x;
 }
