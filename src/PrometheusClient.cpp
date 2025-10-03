@@ -42,15 +42,10 @@ uint16_t *PrometheusClient::init(int w, int h)
   {
     delete[] buffer;
   }
-
   this->width = w;
   this->height = h;
   this->buffer = new uint16_t[width * height];
-
   clearBuffer();
-  // timeClient.begin();
-  Serial.print("Buffer address = 0x");
-  Serial.println((uintptr_t)buffer, HEX);
   return buffer;
 }
 
@@ -106,14 +101,13 @@ bool PrometheusClient::getTimeseries(int range)
   // timeClient.update();   // update NTP
   BufferCanvas c(this->buffer, this->width, this->height);
   c.fillScreen(WHITE); // white background
-  c.drawLine(10, 0, 10, this->height - 1, BLACK);
-  c.drawLine(0, this->height - 10, this->width - 1, this->height - 10, BLACK);
+  c.drawLine(10, 0, 10, this->height - 10, BLACK);
+  c.drawLine(10, this->height - 10, this->width - 1, this->height - 10, BLACK);
   c.setCursor(15, 1);
   c.setTextColor(BLACK);
   c.print(title);
   // Get data
   int count_r = get_data_range(records, range, range / ((this->width - 10) / 2));
- // Serial.println(count_r);
   // Get Max and Min
   max = records[0].value;
   min = records[0].value;
@@ -129,25 +123,30 @@ bool PrometheusClient::getTimeseries(int range)
     };
   }
   float divider = (max - min) / (this->height - 20);
-  //  Serial.print("min: ");
-  //  Serial.print(min);
-  //    Serial.print(" | max: ");
-  //  Serial.print(max);
-  //    Serial.print(" | Divider: ");
-  //  Serial.println(divider);
+  if ( divider < 0.001 ) { divider = 0.001;};
+    Serial.print("min: ");
+    Serial.print(min);
+    Serial.print(" | max: ");
+    Serial.print(max);
+    Serial.print(" | Divider: ");
+    Serial.println(divider);
   // Draw
   int xx = 10;
   int yy = 10;
   int new_y, new_x;
+  if (count_r > ((this->width -10 )/ 2) ) {count_r =  ((this->width  -10) / 2);} ;
   for (int i = 0; i < count_r; i++)
   {
     new_y = this->height - (((records[i].value - min) / divider) + 10);
+    if ( new_y > (this->height -1)) { new_y = this->height;};
+    if ( new_y <  0 ) { new_y = 0;};
     new_x = (i * 2) + 10;
     c.drawLine(xx, yy, new_x, new_y, BLUE);
     c.drawCircle(new_x, new_y, 1, BLUE);
     yy = new_y;
     xx = new_x;
   }
+  return true;
 }
 
 void PrometheusClient::clearBuffer()
@@ -173,7 +172,7 @@ DynamicJsonDocument PrometheusClient::performPrometheusQuery(const char *metric,
   query += "&end=" + String(endTs);
   query += "&step=" + String(step);
   query += "s";
- // Serial.println(query);
+ // //Serial.println(query);
   // Read response
   String contentType = "application/x-www-form-urlencoded";
   httpclient.post("/api/v1/query_range", contentType, query);
@@ -183,7 +182,7 @@ DynamicJsonDocument PrometheusClient::performPrometheusQuery(const char *metric,
   char buf[bufSize];
 
   response = httpclient.responseBody();
-  //Serial.println(response);
+  ////Serial.println(response);
 
   DynamicJsonDocument doc(96000);
   auto err = deserializeJson(doc, response);
@@ -211,8 +210,8 @@ int PrometheusClient::get_data_range(PrometheusClient::Record *arr, int range, i
 
       if (item.containsKey("metric") && item["metric"].containsKey("instance"))
       {
-        //  Serial.print("Instance: ");
-        //  Serial.println(item["metric"]["instance"].as<const char *>());
+        //  //Serial.print("Instance: ");
+        //  //Serial.println(item["metric"]["instance"].as<const char *>());
       }
       if (item.containsKey("values"))
       {
@@ -231,16 +230,16 @@ int PrometheusClient::get_data_range(PrometheusClient::Record *arr, int range, i
   }
   else
   {
-    Serial.println("Query failed: ");
-    // Serial.println(result["data"]["result"]);
+    //Serial.println("Query failed: ");
+    // //Serial.println(result["data"]["result"]);
 
-    Serial.println("=== Prometheus result.data.result ===");
+    //Serial.println("=== Prometheus result.data.result ===");
     serializeJsonPretty(result, Serial); // nicely formatted
-    Serial.println("\n===============================");
+    //Serial.println("\n===============================");
 
     if (result.containsKey("error"))
     {
-      Serial.println(result["error"].as<const char *>());
+      //Serial.println(result["error"].as<const char *>());
     }
   }
   return count_r;
