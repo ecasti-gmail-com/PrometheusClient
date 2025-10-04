@@ -19,6 +19,9 @@
 #define WHITE 0xFFFF
 #define LIGHTGREY 0xC638
 #define DARKGREY 0xAD34
+#define PASTELGREEN 0xDFFB
+#define PASTELORANGE 0xFF7B
+#define PASTELRED 0xFEDB
 
 
 
@@ -34,6 +37,9 @@ public:
     void setMetric(char *metric_p);
      void setTitle(char *title_p);
     void setHost(char *host, int port);
+    void setthr1(long thr);
+    void setthr2(long thr);
+    void enableThr(bool enabled);
     int getWidth();
     int getHeight();
     static void updateTime(); // call this in loop() once
@@ -56,6 +62,9 @@ private:
     uint16_t *buffer = nullptr;
     int width = 0;
     int height = 0;
+    long thr1 = 0;
+    long thr2 = 0;
+    bool showthr = false;
     int refreshCount = 0;
     char *metric = "";
     char *title = "";

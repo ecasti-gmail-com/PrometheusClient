@@ -70,6 +70,21 @@ String PrometheusClient::getMetric()
   return this->metric;
 }
 
+void PrometheusClient::setthr1(long thr)
+{
+  thr1 = thr;
+}
+
+void PrometheusClient::setthr2(long thr)
+{
+  thr2 = thr;
+}
+
+void PrometheusClient::enableThr(bool enabled)
+{
+  showthr = enabled;
+};
+
 int PrometheusClient::getWidth()
 {
   return this->width;
@@ -119,6 +134,85 @@ bool PrometheusClient::getTimeseries(int range)
   // Draw vertical lines for hours
   struct tm timeinfo;
   int xp = -40;
+  int ythr1, ythr2;
+
+  // Get min and max value
+  for (int i = 0; i < count_r; i++)
+  {
+    if (records[i].value > max)
+    {
+      max = records[i].value;
+    };
+    if (records[i].value < min)
+    {
+      min = records[i].value;
+    };
+  }
+  min *= 0.9;
+  max *= 1.1;
+  float divider = (max - min) / (this->height - 20);
+  if (divider < 0.001)
+  {
+    divider = 0.001;
+  };
+  Serial.print("min: ");
+  Serial.print(min);
+  Serial.print(" | max: ");
+  Serial.print(max);
+  Serial.print(" | Divider: ");
+  Serial.println(divider);
+
+  // threshold
+  if (showthr)
+  {
+    ythr1 = this->height - (((thr1 - min) / divider) + 10);
+    ythr2 = this->height - (((thr2 - min) / divider) + 10);
+
+    if (ythr1 < 11)
+    {
+      ythr1 = 11;
+    }
+    else if (thr1 > this->height)
+    {
+      ythr1 = this->height;
+    }
+    else
+    {
+      c.setCursor(0, ythr1);
+      c.setTextColor(DARKGREY);
+      c.print(thr1);
+    }
+
+    if (ythr2 < 11)
+    {
+      ythr2 = 11;
+    }
+    else if (thr2 > this->height)
+    {
+      ythr2 = this->height;
+    }
+    else
+    {
+      c.setCursor(0, ythr2);
+      c.setTextColor(DARKGREY);
+      c.print(thr2);
+    }
+    c.fillRect(11, 11, this->width - 2, ythr2, PASTELRED);
+    c.fillRect(11, ythr2, this->width - 2, ythr1 - ythr2, PASTELORANGE);
+    c.fillRect(11, ythr1, this->width - 2, this->height - ythr1 - 11, PASTELGREEN);
+  }
+  // Print min and max
+  c.setCursor(0, 11);
+  c.setTextColor(BLUE);
+  c.print(int(max));
+  c.setCursor(0, this->height - 20);
+  c.setTextColor(BLUE);
+  c.print(int(min));
+  Serial.print("ythr1: ");
+  Serial.print(ythr1);
+  Serial.print(" | ythr2: ");
+  Serial.println(ythr2);
+  // Time
   for (long tt = (ts_min + 600); tt < (ts_max + 600); tt += 600)
   {
     time_t ti = (time_t)(tt - (tt % 600));
@@ -146,29 +240,6 @@ bool PrometheusClient::getTimeseries(int range)
     }
   }
 
-  // Get min and max value
-  for (int i = 0; i < count_r; i++)
-  {
-    if (records[i].value > max)
-    {
-      max = records[i].value;
-    };
-    if (records[i].value < min)
-    {
-      min = records[i].value;
-    };
-  }
-  float divider = (max - min) / (this->height - 20);
-  if (divider < 0.001)
-  {
-    divider = 0.001;
-  };
-  Serial.print("min: ");
-  Serial.print(min);
-  Serial.print(" | max: ");
-  Serial.print(max);
-  Serial.print(" | Divider: ");
-  Serial.println(divider);
   // Draw
   int xx = 10;
   int yy = 10;
