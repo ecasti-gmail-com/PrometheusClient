@@ -109,7 +109,7 @@ bool PrometheusClient::getTimeseries(int range)
   c.setTextColor(BLACK);
   c.print(title);
   // Get data
-  int count_r = get_data_range(records, range, range / ((this->width - 10) / 2));
+  int count_r = get_data_range(records, range, range / ((this->width - 10) / 4));
   // Get Max and Min
   max = records[0].value;
   min = records[0].value;
@@ -118,17 +118,29 @@ bool PrometheusClient::getTimeseries(int range)
   ts_max = records[count_r - 1].timestamp;
   // Draw vertical lines for hours
   struct tm timeinfo;
+  int xp = -40;
   for (long tt = (ts_min + 600); tt < (ts_max + 600); tt += 600)
   {
-    time_t ti = (time_t) (tt - (tt % 600));
+    time_t ti = (time_t)(tt - (tt % 600));
     gmtime_r(&ti, &timeinfo);
     int xi = getX(this->width, 10, ti, ts_min, ts_max);
     c.drawLine(xi, 10, xi, this->height - 10, LIGHTGREY);
+    if ((xi - xp) > 40)
+    {
+      c.setCursor(xi - 10, this->height - 8);
+      c.setTextColor(DARKGREY);
+      c.print(timeinfo.tm_hour);
+      c.print(":");
+      c.print(timeinfo.tm_min);
+      xp = xi;
+    }
+
     if ((ti % 3600) == 0)
     {
       c.drawLine(xi + 1, 10, xi + 1, this->height - 10, DARKGREY);
       // c.drawLine(xi - 1, 10, xi - 1, this->height - 10, DARKGREY);
-      c.setCursor(xi - 10, this->height - 9);
+      c.setTextColor(BLACK);
+      c.setCursor(xi - 10, this->height - 8);
       c.print(timeinfo.tm_hour);
       c.print(":00");
     }
@@ -178,7 +190,7 @@ bool PrometheusClient::getTimeseries(int range)
     };
     new_x = getX(this->width, 10, records[i].timestamp, ts_min, ts_max);
     c.drawLine(xx, yy, new_x, new_y, BLUE);
-    c.drawCircle(new_x, new_y, 1, BLUE);
+    c.drawCircle(new_x, new_y, 2, BLUE);
     yy = new_y;
     xx = new_x;
   }
