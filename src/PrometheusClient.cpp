@@ -202,12 +202,12 @@ bool PrometheusClient::getTimeseries(int range)
     c.fillRect(11, ythr1, this->width - 2, this->height - ythr1 - 11, PASTELGREEN);
   }
   // Print min and max
-  c.setCursor(0, 11);
+  /*c.setCursor(0, 11);
   c.setTextColor(BLUE);
   c.print(int(max));
   c.setCursor(0, this->height - 20);
   c.setTextColor(BLUE);
-  c.print(int(min));
+  c.print(int(min));*/
   Serial.print("ythr1: ");
   Serial.print(ythr1);
   Serial.print(" | ythr2: ");
@@ -227,6 +227,15 @@ bool PrometheusClient::getTimeseries(int range)
       c.print(":");
       c.print(timeinfo.tm_min);
       xp = xi;
+    }
+    /// GRID
+    for (int j = 11; j < this->height - 10; j += ((this->height - 10) / 5))
+    {
+      c.drawLine(11, j, this->width, j, LIGHTGREY);
+      c.setCursor(0, j);
+      c.setTextColor(DARKGREY);
+      
+      c.print((int) ( ( (this->height  - j - 10 ) * divider ) + min));
     }
 
     if ((ti % 3600) == 0)
