@@ -110,11 +110,78 @@ int PrometheusClient::refresh()
   return refreshCount;
 }
 
+bool PrometheusClient::getStat(int range)
+{
+  float max, min, avg;
+  BufferCanvas c(this->buffer, this->width, this->height);
+  c.fillScreen(WHITE); // white background
+  c.drawRect(0, 0, this->width, this->height, BLACK);
+  c.setCursor(5, 10);
+  c.setFont(&FreeSans9pt7b);
+  c.setTextColor(BLACK);
+  c.print(title);
+  int count_r = get_data_range(records, range, range / ((this->width - 10) / 4));
+  max = records[0].value;
+  min = records[0].value;
+  avg = 0;
+  // Get min, max and avg value
+  for (int i = 0; i < count_r ; i++)
+  {
+    avg += records[i].value;
+    if (records[i].value > max)
+    {
+      max = records[i].value;
+    };
+    if (records[i].value < min)
+    {
+      min = records[i].value;
+    };
+  }
+  avg /= count_r;
+  c.setCursor(25, 50);
+  c.setFont(&FreeSans18pt7b);
+  float current_value = records[count_r - 1].value;
+  c.setTextColor(BLACK);
+  if (showthr)
+  {
+    if (current_value < thr1)
+    {
+      c.setTextColor(GREEN);
+    }
+    else if (current_value < thr2)
+    {
+      c.setTextColor(ORANGE);
+    }
+    else
+    {
+      c.setTextColor(RED);
+    }
+  }
+  c.print((int) current_value);
+  c.setTextColor(BLACK);
+  c.setFont();
+  c.setCursor(5, 60);
+  c.print("Min");
+  c.setCursor(40, 60);
+  c.print("Max");
+  c.setCursor(75, 60);
+  c.print("Avg");
+  c.setFont(&FreeSans9pt7b);
+  c.setCursor(5, 85);
+  c.print((int)min);
+  c.setCursor(40, 85);
+  c.print((int)max);
+  c.setCursor(75, 85);
+  c.print((int)avg);
+  c.setFont();
+  return true;
+}
+
 bool PrometheusClient::getTimeseries(int range)
 {
   float max, min;
   long ts_min, ts_max;
-  // timeClient.update();   // update NTP
+
   BufferCanvas c(this->buffer, this->width, this->height);
   c.fillScreen(WHITE); // white background
   c.drawLine(10, 0, 10, this->height - 10, BLACK);
@@ -148,20 +215,34 @@ bool PrometheusClient::getTimeseries(int range)
       min = records[i].value;
     };
   }
-  long  oldmin = min;
+  long oldmin = min;
   long oldmax = max;
 
-  long min_range =(long) (oldmin - (( max - min) / 5));
-  long max_range =(long) (oldmax + (( max - min) / 5));
-  long min_perc = (long) oldmin * 0.9;
-  long max_perc = (long) oldmax * 1.1;
-  if (min_range < min_perc ) { min = min_range; } else {min = min_perc;};
-  if (max_range > max_perc ) { max = max_range;} else {max = max_perc;};  
+  long min_range = (long)(oldmin - ((max - min) / 5));
+  long max_range = (long)(oldmax + ((max - min) / 5));
+  long min_perc = (long)oldmin * 0.9;
+  long max_perc = (long)oldmax * 1.1;
+  if (min_range < min_perc)
+  {
+    min = min_range;
+  }
+  else
+  {
+    min = min_perc;
+  };
+  if (max_range > max_perc)
+  {
+    max = max_range;
+  }
+  else
+  {
+    max = max_perc;
+  };
 
   float divider = (max - min) / (this->height - 20);
-  if (divider < 0.001)
+  if (divider < 0.05)
   {
-    divider = 0.001;
+    divider = 0.05;
   };
   Serial.print("min: ");
   Serial.print(min);
@@ -242,8 +323,8 @@ bool PrometheusClient::getTimeseries(int range)
       c.drawLine(11, j, this->width, j, LIGHTGREY);
       c.setCursor(0, j);
       c.setTextColor(DARKGREY);
-      
-      c.print((int) ( ( (this->height  - j - 10 ) * divider ) + min));
+
+      c.print((int)(((this->height - j - 10) * divider) + min));
     }
 
     if ((ti % 3600) == 0)
