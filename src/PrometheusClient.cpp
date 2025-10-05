@@ -148,8 +148,16 @@ bool PrometheusClient::getTimeseries(int range)
       min = records[i].value;
     };
   }
-  min *= 0.9;
-  max *= 1.1;
+  long  oldmin = min;
+  long oldmax = max;
+
+  long min_range =(long) (oldmin - (( max - min) / 5));
+  long max_range =(long) (oldmax + (( max - min) / 5));
+  long min_perc = (long) oldmin * 0.9;
+  long max_perc = (long) oldmax * 1.1;
+  if (min_range < min_perc ) { min = min_range; } else {min = min_perc;};
+  if (max_range > max_perc ) { max = max_range;} else {max = max_perc;};  
+
   float divider = (max - min) / (this->height - 20);
   if (divider < 0.001)
   {
