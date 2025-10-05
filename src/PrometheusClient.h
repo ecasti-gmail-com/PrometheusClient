@@ -7,6 +7,9 @@
 #include <ArduinoHttpClient.h>
 #include <ArduinoJson.h>
 #include <Adafruit_GFX.h>
+#include <Fonts/FreeSans18pt7b.h>
+#include <Fonts/FreeSans12pt7b.h>
+#include <Fonts/FreeSans9pt7b.h>
 
 
 #define BLACK 0x0000
@@ -16,6 +19,7 @@
 #define CYAN 0x07FF
 #define MAGENTA 0xF81F
 #define YELLOW 0xFFE0
+#define ORANGE 0xFC40
 #define WHITE 0xFFFF
 #define LIGHTGREY 0xC638
 #define DARKGREY 0xAD34
@@ -32,6 +36,7 @@ public:
     uint16_t *init(int w, int h);
     int refresh();
     bool getTimeseries(int range);
+    bool getStat(int range);
 
     String getMetric();
     void setMetric(char *metric_p);
