@@ -110,6 +110,111 @@ int PrometheusClient::refresh()
   return refreshCount;
 }
 
+bool PrometheusClient::getGauge(int range)
+{
+  float max, min, avg, current_value;
+  int outer_radius, inner_radius;
+  BufferCanvas c(this->buffer, this->width, this->height);
+  c.fillScreen(WHITE); // white background
+  c.drawRect(0, 0, this->width, this->height, BLACK);
+  c.setCursor(5, 10);
+  c.setFont(&FreeSans9pt7b);
+  c.setTextColor(BLACK);
+  c.print(title);
+
+  int x_center = (int)this->width / 2;
+  int y_center = (int)((this->height - 15) / 2) + 15;
+  if (x_center < y_center - 15)
+  {
+    outer_radius = x_center - 5;
+    inner_radius = x_center - 20;
+  }
+  else
+  {
+    outer_radius = y_center - 15;
+    inner_radius = y_center - 30;
+  }
+
+  c.fillCircle(x_center, y_center, outer_radius + 2, BLACK);
+  c.fillCircle(x_center, y_center, inner_radius - 2, WHITE);
+  c.fillTriangle(0, this->height, x_center, y_center, this->width, this->height, WHITE);
+
+  int count_r = get_data_range(records, range, range / ((this->width - 10) / 4));
+  max = records[0].value;
+  min = records[0].value;
+  avg = 0;
+  current_value = records[count_r - 1].value;
+  for (int i = 0; i < count_r; i++)
+  {
+    avg += records[i].value;
+    if (records[i].value > max)
+    {
+      max = records[i].value;
+    };
+    if (records[i].value < min)
+    {
+      min = records[i].value;
+    };
+  }
+  avg /= count_r;
+
+  // Arc
+
+  int start_angle = -135;
+  int seg_count = (int)((current_value - min_val) * 90) / this->max_val;
+
+  byte seg = 3; // Segments are 3 degrees wide = 120 segments for 360 degrees
+  byte inc = 3; // Draw segments every 3 degrees, increase to 6 for segmented ring
+
+  // Draw colour blocks every inc degrees
+  for (int i = start_angle; i < start_angle + seg * seg_count; i += inc)
+  {
+    // Calculate pair of coordinates for segment start
+    float sx = cos((i - 90) * DEG2RAD);
+    float sy = sin((i - 90) * DEG2RAD);
+    uint16_t x0 = sx * (inner_radius) + x_center;
+    uint16_t y0 = sy * (inner_radius) + y_center;
+    uint16_t x1 = sx * outer_radius + x_center;
+    uint16_t y1 = sy * outer_radius + y_center;
+
+    // Calculate pair of coordinates for segment end
+    float sx2 = cos((i + seg - 90) * DEG2RAD);
+    float sy2 = sin((i + seg - 90) * DEG2RAD);
+    int x2 = sx2 * inner_radius + x_center;
+    int y2 = sy2 * inner_radius + y_center;
+    int x3 = sx2 * outer_radius + x_center;
+    int y3 = sy2 * outer_radius + y_center;
+    if (current_value < thr1)
+    {
+      c.fillTriangle(x0, y0, x1, y1, x2, y2, GREEN);
+      c.fillTriangle(x1, y1, x2, y2, x3, y3, GREEN);
+    }
+    else if (current_value < thr2)
+    {
+      c.fillTriangle(x0, y0, x1, y1, x2, y2, ORANGE);
+      c.fillTriangle(x1, y1, x2, y2, x3, y3, ORANGE);
+    }
+    else
+    {
+      c.fillTriangle(x0, y0, x1, y1, x2, y2, RED);
+      c.fillTriangle(x1, y1, x2, y2, x3, y3, RED);
+    }
+  }
+
+  /* Threeshold*/
+  c.setTextColor(BLACK);
+  c.setCursor(x_center - (outer_radius * 0.85 ) , 15 + (this->height * 0.85));
+  c.setFont(&FreeSans9pt7b);
+  c.print(this->min_val);
+  c.setCursor(x_center + (outer_radius * 0.85 ) -15, 15 + (this->height * 0.85));
+  c.print(this->max_val);
+  c.setFont(&FreeSans18pt7b);
+  c.setCursor((this->width / 2) - 30, 15 + (this->height / 2));
+  c.print((int)current_value);
+
+  return true;
+}
+
 bool PrometheusClient::getStat(int range)
 {
   float max, min, avg;
@@ -125,7 +230,7 @@ bool PrometheusClient::getStat(int range)
   min = records[0].value;
   avg = 0;
   // Get min, max and avg value
-  for (int i = 0; i < count_r ; i++)
+  for (int i = 0; i < count_r; i++)
   {
     avg += records[i].value;
     if (records[i].value > max)
@@ -157,7 +262,7 @@ bool PrometheusClient::getStat(int range)
       c.setTextColor(RED);
     }
   }
-  c.print((int) current_value);
+  c.print((int)current_value);
   c.setTextColor(BLACK);
   c.setFont();
   c.setCursor(5, 60);
