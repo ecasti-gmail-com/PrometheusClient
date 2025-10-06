@@ -36,6 +36,7 @@ String PrometheusClient::getTime()
   return "00:00:00";
 }
 
+/*
 uint16_t *PrometheusClient::init(int w, int h)
 {
   if (buffer)
@@ -48,6 +49,60 @@ uint16_t *PrometheusClient::init(int w, int h)
   clearBuffer();
   return buffer;
 }
+
+*/
+
+
+uint16_t* PrometheusClient::init(int w, int h) {
+    // free previous buffer if needed
+    if (buffer) {
+    #if defined(ARDUINO_GIGA)
+        if (usingSDRAM) {
+            SDRAM.free(buffer);
+        } else {
+            delete[] buffer;
+        }
+    #elif defined(ESP32)
+        if (usingPSRAM) {
+            free(buffer);
+        } else {
+            delete[] buffer;
+        }
+    #else
+        delete[] buffer;
+    #endif
+        buffer = nullptr;
+    }
+
+    this->width = w;
+    this->height = h;
+    size_t size = width * height * sizeof(uint16_t);
+
+#if defined(ARDUINO_GIGA)
+    buffer = (uint16_t*)SDRAM.malloc(size);
+    usingSDRAM = (buffer != nullptr);
+    Serial.println(usingSDRAM ? "[SDRAM] Buffer allocated" : "[SDRAM] Allocation failed, using heap");
+    if (!usingSDRAM) buffer = new uint16_t[width * height];
+
+#elif defined(ESP32)
+    buffer = (uint16_t*)ps_malloc(size);
+    usingPSRAM = (buffer != nullptr);
+    Serial.println(usingPSRAM ? "[PSRAM] Buffer allocated" : "[PSRAM] Allocation failed, using heap");
+    if (!usingPSRAM) buffer = new uint16_t[width * height];
+
+#else
+    buffer = new uint16_t[width * height];
+#endif
+
+    clearBuffer();
+    return buffer;
+}
+
+
+
+
+
+
 
 void PrometheusClient::setMetric(char *metric_p)
 {
