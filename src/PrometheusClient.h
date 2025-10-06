@@ -27,7 +27,7 @@
 #define PASTELORANGE 0xFF7B
 #define PASTELRED 0xFEDB
 
-
+#define DEG2RAD 0.0174532925
 
 class PrometheusClient
 {
@@ -37,13 +37,15 @@ public:
     int refresh();
     bool getTimeseries(int range);
     bool getStat(int range);
-
+    bool getGauge(int range);
     String getMetric();
     void setMetric(char *metric_p);
      void setTitle(char *title_p);
     void setHost(char *host, int port);
     void setthr1(long thr);
     void setthr2(long thr);
+    void setMinVal(long min_val_p);
+    void setMaxVal(long max_val_p); 
     void enableThr(bool enabled);
     int getWidth();
     int getHeight();
@@ -69,6 +71,8 @@ private:
     int height = 0;
     long thr1 = 0;
     long thr2 = 0;
+    long min_val = 0;
+    long max_val = 100;
     bool showthr = false;
     int refreshCount = 0;
     char *metric = "";
