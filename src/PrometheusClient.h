@@ -11,6 +11,11 @@
 #include <Fonts/FreeSans12pt7b.h>
 #include <Fonts/FreeSans9pt7b.h>
 
+#if defined(ARDUINO_GIGA)
+  #include "SDRAM.h"
+#endif
+
+
 
 #define BLACK 0x0000
 #define BLUE 0x001F
@@ -69,6 +74,8 @@ private:
     uint16_t *buffer = nullptr;
     int width = 0;
     int height = 0;
+    bool usingSDRAM = false;  // 👈 track SDRAM usage
+    bool usingPSRAM = false;  // 👈 track PSRAM usage
     long thr1 = 0;
     long thr2 = 0;
     long min_val = 0;
