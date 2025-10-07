@@ -52,57 +52,60 @@ uint16_t *PrometheusClient::init(int w, int h)
 
 */
 
-
-uint16_t* PrometheusClient::init(int w, int h) {
-    // free previous buffer if needed
-    if (buffer) {
-    #if defined(ARDUINO_GIGA)
-        if (usingSDRAM) {
-            SDRAM.free(buffer);
-        } else {
-            delete[] buffer;
-        }
-    #elif defined(ESP32)
-        if (usingPSRAM) {
-            free(buffer);
-        } else {
-            delete[] buffer;
-        }
-    #else
-        delete[] buffer;
-    #endif
-        buffer = nullptr;
+uint16_t *PrometheusClient::init(int w, int h)
+{
+  // free previous buffer if needed
+  if (buffer)
+  {
+#if defined(ARDUINO_GIGA)
+    if (usingSDRAM)
+    {
+      SDRAM.free(buffer);
     }
+    else
+    {
+      delete[] buffer;
+    }
+#elif defined(ESP32)
+    if (usingPSRAM)
+    {
+      free(buffer);
+    }
+    else
+    {
+      delete[] buffer;
+    }
+#else
+    delete[] buffer;
+#endif
+    buffer = nullptr;
+  }
 
-    this->width = w;
-    this->height = h;
-    size_t size = width * height * sizeof(uint16_t);
+  this->width = w;
+  this->height = h;
+  size_t size = width * height * sizeof(uint16_t);
 
 #if defined(ARDUINO_GIGA)
-    buffer = (uint16_t*)SDRAM.malloc(size);
-    usingSDRAM = (buffer != nullptr);
-    Serial.println(usingSDRAM ? "[SDRAM] Buffer allocated" : "[SDRAM] Allocation failed, using heap");
-    if (!usingSDRAM) buffer = new uint16_t[width * height];
+  buffer = (uint16_t *)SDRAM.malloc(size);
+  usingSDRAM = (buffer != nullptr);
+  Serial.println(usingSDRAM ? "[SDRAM] Buffer allocated" : "[SDRAM] Allocation failed, using heap");
+  if (!usingSDRAM)
+    buffer = new uint16_t[width * height];
 
 #elif defined(ESP32)
-    buffer = (uint16_t*)ps_malloc(size);
-    usingPSRAM = (buffer != nullptr);
-    Serial.println(usingPSRAM ? "[PSRAM] Buffer allocated" : "[PSRAM] Allocation failed, using heap");
-    if (!usingPSRAM) buffer = new uint16_t[width * height];
+  buffer = (uint16_t *)ps_malloc(size);
+  usingPSRAM = (buffer != nullptr);
+  Serial.println(usingPSRAM ? "[PSRAM] Buffer allocated" : "[PSRAM] Allocation failed, using heap");
+  if (!usingPSRAM)
+    buffer = new uint16_t[width * height];
 
 #else
-    buffer = new uint16_t[width * height];
+  buffer = new uint16_t[width * height];
 #endif
 
-    clearBuffer();
-    return buffer;
+  clearBuffer();
+  return buffer;
 }
-
-
-
-
-
-
 
 void PrometheusClient::setMetric(char *metric_p)
 {
@@ -258,10 +261,10 @@ bool PrometheusClient::getGauge(int range)
 
   /* Threeshold*/
   c.setTextColor(BLACK);
-  c.setCursor(x_center - (outer_radius * 0.85 ) , 15 + (this->height * 0.85));
+  c.setCursor(x_center - (outer_radius * 0.85), 15 + (this->height * 0.85));
   c.setFont(&FreeSans9pt7b);
   c.print(this->min_val);
-  c.setCursor(x_center + (outer_radius * 0.85 ) -15, 15 + (this->height * 0.85));
+  c.setCursor(x_center + (outer_radius * 0.85) - 15, 15 + (this->height * 0.85));
   c.print(this->max_val);
   c.setFont(&FreeSans18pt7b);
   c.setCursor((this->width / 2) - 30, 15 + (this->height / 2));
@@ -341,17 +344,46 @@ bool PrometheusClient::getTimeseries(int range)
 {
   float max, min;
   long ts_min, ts_max;
-
+  int dy = (int)this->height / 10;
+  int dx = (int)this->width / 10;
+  if (dy < 10)
+  {
+    dy = 10;
+  };
+  if (dy > 30)
+  {
+    dy = 30;
+  }
+  if (dx < 10)
+  {
+    dx = 10;
+  };
+  if (dx > 60)
+  {
+    dx = 60;
+  }
   BufferCanvas c(this->buffer, this->width, this->height);
   c.fillScreen(WHITE); // white background
-  c.drawLine(10, 0, 10, this->height - 10, BLACK);
-  c.drawLine(10, this->height - 10, this->width - 1, this->height - 10, BLACK);
-  c.drawLine(10, 10, this->width - 1, 10, BLACK);
-  c.setCursor(15, 1);
+  c.drawRect(0, 0, this->width, this->height, BLACK);
+  c.drawLine(dx, 0, dx, this->height - dy, BLACK);
+  c.drawLine(dx, this->height - dy, this->width - 1, this->height - dy, BLACK);
+  c.drawLine(dx, dy, this->width - 1, dy, BLACK);
+  c.setCursor(dx + 5, 1);
   c.setTextColor(BLACK);
+  if (dy > 25)
+  {
+    c.setCursor(dx + 5, 18);
+    c.setFont(&FreeSans12pt7b);
+  }
+  else if (dy > 14)
+  {
+    c.setCursor(dx + 5, 8);
+    c.setFont(&FreeSans9pt7b);
+  }
   c.print(title);
+  c.setFont();
   // Get data
-  int count_r = get_data_range(records, range, range / ((this->width - 10) / 4));
+  int count_r = get_data_range(records, range, range / ((this->width - dx) / 4));
   // Get Max and Min
   max = records[0].value;
   min = records[0].value;
@@ -399,7 +431,7 @@ bool PrometheusClient::getTimeseries(int range)
     max = max_perc;
   };
 
-  float divider = (max - min) / (this->height - 20);
+  float divider = (max - min) / (this->height - (2 * dy));
   if (divider < 0.05)
   {
     divider = 0.05;
@@ -414,12 +446,12 @@ bool PrometheusClient::getTimeseries(int range)
   // threshold
   if (showthr)
   {
-    ythr1 = this->height - (((thr1 - min) / divider) + 10);
-    ythr2 = this->height - (((thr2 - min) / divider) + 10);
+    ythr1 = this->height - (((thr1 - min) / divider) + dy);
+    ythr2 = this->height - (((thr2 - min) / divider) + dy);
 
-    if (ythr1 < 11)
+    if (ythr1 < dy + 1)
     {
-      ythr1 = 11;
+      ythr1 = dy + 1;
     }
     else if (thr1 > this->height)
     {
@@ -429,12 +461,18 @@ bool PrometheusClient::getTimeseries(int range)
     {
       c.setCursor(0, ythr1);
       c.setTextColor(DARKGREY);
+      if (dx > 20)
+      {
+        c.setCursor(2, ythr1 + 9);
+        c.setFont(&FreeSans9pt7b);
+      }
       c.print(thr1);
+      c.setFont();
     }
 
-    if (ythr2 < 11)
+    if (ythr2 < dy + 1)
     {
-      ythr2 = 11;
+      ythr2 = dy + 1;
     }
     else if (thr2 > this->height)
     {
@@ -444,19 +482,21 @@ bool PrometheusClient::getTimeseries(int range)
     {
       c.setCursor(0, ythr2);
       c.setTextColor(DARKGREY);
+      if (dx > 20)
+      {
+        c.setCursor(2, ythr2 + 9);
+        c.setFont(&FreeSans9pt7b);
+      }
+
       c.print(thr2);
+      c.setFont();
     }
-    c.fillRect(11, 11, this->width - 2, ythr2, PASTELRED);
-    c.fillRect(11, ythr2, this->width - 2, ythr1 - ythr2, PASTELORANGE);
-    c.fillRect(11, ythr1, this->width - 2, this->height - ythr1 - 11, PASTELGREEN);
+    c.fillRect(dx + 1, dy + 1, this->width - 2, ythr2, PASTELRED);
+    c.fillRect(dx + 1, ythr2, this->width - 2, ythr1 - ythr2, PASTELORANGE);
+    c.fillRect(dx + 1, ythr1, this->width - 2, this->height - ythr1 - dy - 1, PASTELGREEN);
   }
   // Print min and max
-  /*c.setCursor(0, 11);
-  c.setTextColor(BLUE);
-  c.print(int(max));
-  c.setCursor(0, this->height - 20);
-  c.setTextColor(BLUE);
-  c.print(int(min));*/
+
   Serial.print("ythr1: ");
   Serial.print(ythr1);
   Serial.print(" | ythr2: ");
@@ -466,49 +506,66 @@ bool PrometheusClient::getTimeseries(int range)
   {
     time_t ti = (time_t)(tt - (tt % 600));
     gmtime_r(&ti, &timeinfo);
-    int xi = getX(this->width, 10, ti, ts_min, ts_max);
-    c.drawLine(xi, 10, xi, this->height - 10, LIGHTGREY);
+    int xi = getX(this->width, dx, ti, ts_min, ts_max);
+    c.drawLine(xi, dy, xi, this->height - dy, LIGHTGREY);
     if ((xi - xp) > 40)
     {
-      c.setCursor(xi - 10, this->height - 8);
+      c.setCursor(xi - 10, this->height - dy + 2);
+      if ((dx > 20) && (dy > 20))
+      {
+        c.setCursor(xi - 15, this->height - 10);
+        c.setFont(&FreeSans9pt7b);
+      }
       c.setTextColor(DARKGREY);
       c.print(timeinfo.tm_hour);
       c.print(":");
       c.print(timeinfo.tm_min);
       xp = xi;
+      c.setFont();
     }
     /// GRID
-    for (int j = 11; j < this->height - 10; j += ((this->height - 10) / 5))
+    for (int j = dy + 1; j < this->height - dy; j += ((this->height - dy) / 5))
     {
-      c.drawLine(11, j, this->width, j, LIGHTGREY);
+      c.drawLine(dx + 1, j, this->width, j, LIGHTGREY);
       c.setCursor(0, j);
       c.setTextColor(DARKGREY);
-
-      c.print((int)(((this->height - j - 10) * divider) + min));
+      if (dx > 20)
+      {
+        c.setCursor(2, j + 9);
+        c.setFont(&FreeSans9pt7b);
+      }
+      c.print((int)(((this->height - j - dy) * divider) + min));
+      c.setFont();
     }
 
     if ((ti % 3600) == 0)
     {
-      c.drawLine(xi + 1, 10, xi + 1, this->height - 10, DARKGREY);
+      c.drawLine(xi + 1, dy, xi + 1, this->height - dy, DARKGREY);
       // c.drawLine(xi - 1, 10, xi - 1, this->height - 10, DARKGREY);
       c.setTextColor(BLACK);
-      c.setCursor(xi - 10, this->height - 8);
+      c.setCursor(xi - 10, this->height - dy + 2);
+      if ((dx > 20) && (dy > 20))
+      {
+        c.setCursor(xi - 15, this->height - 10);
+        c.setFont(&FreeSans9pt7b);
+      }
       c.print(timeinfo.tm_hour);
       c.print(":00");
+      c.setFont();
     }
   }
 
   // Draw
-  int xx = 10;
-  int yy = 10;
+  int xx = dx;
+  int yy = dy;
   int new_y, new_x;
-  if (count_r > ((this->width - 10) / 2))
+  if (count_r > ((this->width - dx) / 2))
   {
-    count_r = ((this->width - 10) / 2);
+    count_r = ((this->width - dx) / 2);
   };
   for (int i = 0; i < count_r; i++)
   {
-    new_y = this->height - (((records[i].value - min) / divider) + 10);
+    new_y = this->height - (((records[i].value - min) / divider) + dy);
     if (new_y > (this->height - 1))
     {
       new_y = this->height;
@@ -517,7 +574,7 @@ bool PrometheusClient::getTimeseries(int range)
     {
       new_y = 0;
     };
-    new_x = getX(this->width, 10, records[i].timestamp, ts_min, ts_max);
+    new_x = getX(this->width, dx, records[i].timestamp, ts_min, ts_max);
     c.drawLine(xx, yy, new_x, new_y, BLUE);
     c.drawCircle(new_x, new_y, 2, BLUE);
     yy = new_y;
