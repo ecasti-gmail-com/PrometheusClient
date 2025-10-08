@@ -36,22 +36,6 @@ String PrometheusClient::getTime()
   return "00:00:00";
 }
 
-/*
-uint16_t *PrometheusClient::init(int w, int h)
-{
-  if (buffer)
-  {
-    delete[] buffer;
-  }
-  this->width = w;
-  this->height = h;
-  this->buffer = new uint16_t[width * height];
-  clearBuffer();
-  return buffer;
-}
-
-*/
-
 uint16_t *PrometheusClient::init(int w, int h)
 {
   // free previous buffer if needed
@@ -133,6 +117,27 @@ void PrometheusClient::setthr1(long thr)
   thr1 = thr;
 }
 
+int PrometheusClient::getAlert()
+{
+  return this->alert;
+}
+
+String PrometheusClient::getAlertString()
+{
+  if (this->alert == 2)
+  {
+    return "Critical";
+  }
+  else if (this->alert == 1)
+  {
+    return "Warning";
+  }
+  else
+  {
+    return "Normal";
+  }
+}
+
 void PrometheusClient::setthr2(long thr)
 {
   thr2 = thr;
@@ -170,6 +175,7 @@ int PrometheusClient::refresh()
 
 bool PrometheusClient::getGauge(int range)
 {
+  this->alert = 0;
   float max, min, avg, current_value;
   int outer_radius, inner_radius;
   BufferCanvas c(this->buffer, this->width, this->height);
@@ -251,11 +257,13 @@ bool PrometheusClient::getGauge(int range)
     {
       c.fillTriangle(x0, y0, x1, y1, x2, y2, ORANGE);
       c.fillTriangle(x1, y1, x2, y2, x3, y3, ORANGE);
+      this->alert = 1;
     }
     else
     {
       c.fillTriangle(x0, y0, x1, y1, x2, y2, RED);
       c.fillTriangle(x1, y1, x2, y2, x3, y3, RED);
+      this->alert = 2;
     }
   }
 
@@ -275,6 +283,7 @@ bool PrometheusClient::getGauge(int range)
 
 bool PrometheusClient::getStat(int range)
 {
+  this->alert = 0;
   float max, min, avg;
   BufferCanvas c(this->buffer, this->width, this->height);
   c.fillScreen(WHITE); // white background
@@ -314,10 +323,12 @@ bool PrometheusClient::getStat(int range)
     else if (current_value < thr2)
     {
       c.setTextColor(ORANGE);
+      this->alert = 1;
     }
     else
     {
       c.setTextColor(RED);
+      this->alert = 2;
     }
   }
   c.print((int)current_value);
@@ -342,6 +353,7 @@ bool PrometheusClient::getStat(int range)
 
 bool PrometheusClient::getTimeseries(int range)
 {
+  this->alert = 0;
   float max, min;
   long ts_min, ts_max;
   int dy = (int)this->height / 10;
@@ -358,9 +370,9 @@ bool PrometheusClient::getTimeseries(int range)
   {
     dx = 10;
   };
-  if (dx > 60)
+  if (dx > 45)
   {
-    dx = 60;
+    dx = 45;
   }
   BufferCanvas c(this->buffer, this->width, this->height);
   c.fillScreen(WHITE); // white background
@@ -561,6 +573,7 @@ bool PrometheusClient::getTimeseries(int range)
   int new_y, new_x;
   if (count_r > ((this->width - dx) / 2))
   {
+    Serial.println("Truncating");
     count_r = ((this->width - dx) / 2);
   };
   for (int i = 0; i < count_r; i++)
@@ -579,6 +592,14 @@ bool PrometheusClient::getTimeseries(int range)
     c.drawCircle(new_x, new_y, 2, BLUE);
     yy = new_y;
     xx = new_x;
+  }
+  if (records[count_r].value > this->thr2)
+  {
+    this->alert = 2;
+  }
+  else if (records[count_r].value > this->thr1)
+  {
+    this->alert = 1;
   }
   return true;
 }
@@ -601,14 +622,13 @@ DynamicJsonDocument PrometheusClient::performPrometheusQuery(const char *metric,
   unsigned long endTs = timeClient->getEpochTime();
   unsigned long startTs = endTs - windowSeconds;
   /* to be moved */
-  // PrometheusClient::drawTimeGrid(this->width,this->height,10,startTs,endTs);
 
   String query = "query=" + String(metric);
   query += "&start=" + String(startTs);
   query += "&end=" + String(endTs);
   query += "&step=" + String(step);
   query += "s";
-  // //Serial.println(query);
+
   // Read response
   String contentType = "application/x-www-form-urlencoded";
   httpclient.post("/api/v1/query_range", contentType, query);
@@ -616,10 +636,7 @@ DynamicJsonDocument PrometheusClient::performPrometheusQuery(const char *metric,
   String response;
   const size_t bufSize = 4096; // small chunk
   char buf[bufSize];
-
   response = httpclient.responseBody();
-  ////Serial.println(response);
-
   DynamicJsonDocument doc(96000);
   auto err = deserializeJson(doc, response);
   if (err)
@@ -666,12 +683,10 @@ int PrometheusClient::get_data_range(PrometheusClient::Record *arr, int range, i
   else
   {
     // Serial.println("Query failed: ");
-    //  //Serial.println(result["data"]["result"]);
-
+    // Serial.println(result["data"]["result"]);
     // Serial.println("=== Prometheus result.data.result ===");
     serializeJsonPretty(result, Serial); // nicely formatted
     // Serial.println("\n===============================");
-
     if (result.containsKey("error"))
     {
       // Serial.println(result["error"].as<const char *>());
