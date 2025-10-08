@@ -54,6 +54,8 @@ public:
     void enableThr(bool enabled);
     int getWidth();
     int getHeight();
+    int getAlert();
+    String getAlertString();
     static void updateTime(); // call this in loop() once
     String getTime();
     static void beginNTP();
@@ -72,6 +74,7 @@ private:
     void clearBuffer();
 
     uint16_t *buffer = nullptr;
+    int alert = 0;
     int width = 0;
     int height = 0;
     bool usingSDRAM = false;  // 👈 track SDRAM usage
