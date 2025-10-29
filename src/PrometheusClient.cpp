@@ -13,7 +13,7 @@ void PrometheusClient::beginNTP()
   if (!ntpStarted)
   {
     ntpUDP = new WiFiUDP();
-    timeClient = new NTPClient(*ntpUDP, "pool.ntp.org", 0, 60000);
+    timeClient = new NTPClient(*ntpUDP, "pool.ntp.org", 0, 600000);
     timeClient->begin();
     ntpStarted = true;
   }
@@ -107,9 +107,14 @@ void PrometheusClient::setHost(char *host, int port)
   this->prometheusPort = port;
 }
 
-String PrometheusClient::getMetric()
+char * PrometheusClient::getMetric()
 {
   return this->metric;
+}
+
+char * PrometheusClient::getTitle()
+{
+  return this->title;
 }
 
 void PrometheusClient::setthr1(long thr)
@@ -121,6 +126,7 @@ int PrometheusClient::getAlert()
 {
   return this->alert;
 }
+
 
 String PrometheusClient::getAlertString()
 {
@@ -147,6 +153,24 @@ void PrometheusClient::enableThr(bool enabled)
 {
   showthr = enabled;
 };
+
+bool PrometheusClient::getEnabledThr()
+{
+  return this->showthr ;
+};
+
+void PrometheusClient::enableTrend(bool enabled)
+{
+  showtrend = enabled;
+};
+
+long PrometheusClient::getthr1(){
+  return this->thr1;
+}
+    
+long PrometheusClient::getthr2(){
+  return this->thr2;
+}
 
 int PrometheusClient::getWidth()
 {
@@ -180,7 +204,7 @@ bool PrometheusClient::getGauge(int range)
   int outer_radius, inner_radius;
   BufferCanvas c(this->buffer, this->width, this->height);
   c.fillScreen(WHITE); // white background
-  c.drawRect(0, 0, this->width, this->height, BLACK);
+  c.drawRect(0, 0, this->width , this->height , BLACK);
   c.setCursor(5, 10);
   c.setFont(&FreeSans9pt7b);
   c.setTextColor(BLACK);
@@ -191,17 +215,17 @@ bool PrometheusClient::getGauge(int range)
   if (x_center < y_center - 15)
   {
     outer_radius = x_center - 5;
-    inner_radius = x_center - 20;
+    inner_radius = int(x_center * 0.7) ; //- 20;
   }
   else
   {
     outer_radius = y_center - 15;
-    inner_radius = y_center - 30;
+    inner_radius = int(y_center * 0.7); //- 30;
   }
 
   c.fillCircle(x_center, y_center, outer_radius + 2, BLACK);
   c.fillCircle(x_center, y_center, inner_radius - 2, WHITE);
-  c.fillTriangle(0, this->height, x_center, y_center, this->width, this->height, WHITE);
+  c.fillTriangle(2, this->height -2, x_center, y_center, this->width -2, this->height -2 , WHITE);
 
   int count_r = get_data_range(records, range, range / ((this->width - 10) / 4));
   max = records[0].value;
@@ -332,6 +356,7 @@ bool PrometheusClient::getStat(int range)
     }
   }
   c.print((int)current_value);
+  if (this->showtrend) {
   c.setTextColor(BLACK);
   c.setFont();
   c.setCursor(5, 60);
@@ -348,6 +373,7 @@ bool PrometheusClient::getStat(int range)
   c.setCursor(75, 85);
   c.print((int)avg);
   c.setFont();
+  }
   return true;
 }
 
