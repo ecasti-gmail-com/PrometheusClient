@@ -4,12 +4,27 @@
 #include <WiFiUdp.h>
 #include <NTPClient.h>  // for NTP updates
 #include <WiFiClient.h> // for HTTP requests
-#include <ArduinoHttpClient.h>
+
+#include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 #include <Adafruit_GFX.h>
 #include <Fonts/FreeSans18pt7b.h>
 #include <Fonts/FreeSans12pt7b.h>
 #include <Fonts/FreeSans9pt7b.h>
+#include <base64.h>  
+
+#ifdef ARDUINO_GIGA
+  #include <WiFiS3.h>
+  #define WIFI_CLIENT WiFiClientSecure
+#else
+  #include <WiFi.h>
+  #define WIFI_CLIENT WiFiClientSecure
+#endif
+
+#include <ArduinoHttpClient.h>
+
+
+
 
 #if defined(ARDUINO_GIGA)
   #include "SDRAM.h"
@@ -48,6 +63,8 @@ public:
     void setMetric(char *metric_p);
      void setTitle(char *title_p);
     void setHost(char *host, int port);
+    void setCredentials(char *username_p,char *password_p);
+    void setHttps(bool enabled);
     void setthr1(long thr);
     void setthr2(long thr);
     long getthr1();
@@ -74,7 +91,7 @@ public:
     };
 
     static const int MAX_RECORDS = 1000;
-    Record records[MAX_RECORDS]; // each instance has its own buffer
+    Record records[MAX_RECORDS]; 
 private:
     void clearBuffer();
 
@@ -82,14 +99,18 @@ private:
     int alert = 0;
     int width = 0;
     int height = 0;
-    bool usingSDRAM = false;  // 👈 track SDRAM usage
-    bool usingPSRAM = false;  // 👈 track PSRAM usage
+    bool usingSDRAM = false;  
+    bool usingPSRAM = false;  
     long thr1 = 0;
     long thr2 = 0;
     long min_val = 0;
     long max_val = 100;
     bool showthr = false;
     bool showtrend = true;
+    bool usehttps  = false;
+    char *username = "";
+    char *password = "";
+    char *baseurl  = "/api/v1/query_range";
     int refreshCount = 0;
     char *metric = "";
     char *title = "";
