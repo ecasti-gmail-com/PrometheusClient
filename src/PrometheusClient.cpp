@@ -237,7 +237,7 @@
     c.fillCircle(x_center, y_center, inner_radius - 2, WHITE);
     c.fillTriangle(2, this->height -2, x_center, y_center, this->width -2, this->height -2 , WHITE);
 
-    int count_r = get_data_range(records, range, range / ((this->width - 10) / 4));
+    int count_r = get_data_range(records, range, range / 2);
     max = records[0].value;
     min = records[0].value;
     avg = 0;
@@ -326,7 +326,7 @@
     c.setFont(&FreeSans9pt7b);
     c.setTextColor(BLACK);
     c.print(title);
-    int count_r = get_data_range(records, range, range / ((this->width - 10) / 4));
+    int count_r = get_data_range(records, range, range / ((this->width - 10) / 10));
     max = records[0].value;
     min = records[0].value;
     avg = 0;
@@ -431,7 +431,7 @@
     c.print(title);
     c.setFont();
     // Get data
-    int count_r = get_data_range(records, range, range / ((this->width - dx) / 4));
+    int count_r = get_data_range(records, range, range / ((this->width - dx) / 10));
     // Get Max and Min
     max = records[0].value;
     min = records[0].value;
@@ -543,12 +543,6 @@
       c.fillRect(dx + 1, ythr2, this->width - 2, ythr1 - ythr2, PASTELORANGE);
       c.fillRect(dx + 1, ythr1, this->width - 2, this->height - ythr1 - dy - 1, PASTELGREEN);
     }
-    // Print min and max
-
-    Serial.print("ythr1: ");
-    Serial.print(ythr1);
-    Serial.print(" | ythr2: ");
-    Serial.println(ythr2);
     // Time
     for (long tt = (ts_min + 600); tt < (ts_max + 600); tt += 600)
     {
