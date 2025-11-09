@@ -63,6 +63,7 @@ public:
     void setMetric(char *metric_p);
      void setTitle(char *title_p);
     void setHost(char *host, int port);
+    void setURI(char *uri);
     void setCredentials(char *username_p,char *password_p);
     void setHttps(bool enabled);
     void setthr1(long thr);
@@ -114,7 +115,7 @@ private:
     int refreshCount = 0;
     char *metric = "";
     char *title = "";
-    char *prometheusHost = "192.168.2.8";
+    char *prometheusHost = "";
     int prometheusPort = 9090;
     int getX(int W, int xOffset,  unsigned long ts,  unsigned long start,  unsigned long end);
     static WiFiUDP *ntpUDP;
