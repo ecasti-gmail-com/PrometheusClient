@@ -116,7 +116,10 @@
   {
     this->usehttps = enabled;
   }
-
+  void PrometheusClient::setURI(char *uri)
+  {
+    this->baseurl = uri;
+  }
   char * PrometheusClient::getMetric()
   {
     return this->metric;
@@ -484,13 +487,6 @@
     {
       divider = 0.05;
     };
-    Serial.print("min: ");
-    Serial.print(min);
-    Serial.print(" | max: ");
-    Serial.print(max);
-    Serial.print(" | Divider: ");
-    Serial.println(divider);
-
     // threshold
     if (showthr)
     {
@@ -658,67 +654,43 @@
     query += "&end=" + String(endTs);
     query += "&step=" + String(step);
     query += "s";
-
-    // Read response
-   // String contentType = "application/x-www-form-urlencoded";
-  // httpclient.post("/api/v1/query_range", contentType, query);
-
     String response;
     const size_t bufSize = 4096; // small chunk
     char buf[bufSize];
-  // response = httpclient.responseBody();
-
     if (usehttps) {
       WiFiClientSecure client;
       client.setTimeout(5000);
       client.setInsecure();  // for testing, skip cert verification
 
-      HttpClient httpclient(client, "prometheus-prod-65-prod-eu-west-2.grafana.net", 443);
+      HttpClient httpclient(client, this->prometheusHost, this->prometheusPort);
       httpclient.beginRequest();
-      httpclient.post("/api/prom/api/v1/query_range");
+      httpclient.post(this->baseurl);
       httpclient.sendHeader("Content-Type", contentType);
       httpclient.sendHeader("Authorization", authHeader);
       httpclient.sendHeader("Content-Length", query.length());
       httpclient.endRequest();
       httpclient.print(query);
-      Serial.print("Status code: ");
-      Serial.println(httpclient.responseStatusCode());
-      response = httpclient.responseBody();
-      Serial.println("----------------------");
-      Serial.println(response);
-      Serial.println("----------------------");
-    } else 
+    
+      int statuscode = httpclient.responseStatusCode();
+      if (statuscode > 200) {
+        Serial.print("Status code: ");
+        Serial.println(statuscode);
+        Serial.println("----------------------");
+        Serial.println(response);
+        Serial.println("----------------------");
+      }
+       response = httpclient.responseBody();
+    } 
+    else 
     {
     WiFiClient client;
     HttpClient httpclient(client, this->prometheusHost,  this->prometheusPort);
 
     client.setTimeout(2000);
-    httpclient.post("/api/v1/query_range", contentType, query);
+    httpclient.post(this->baseurl, contentType, query);
     response = httpclient.responseBody();
     }
 
-
-
-  /*
-    unsigned long endTs = timeClient->getEpochTime();
-    unsigned long startTs = endTs - windowSeconds;
-    
-
-    String query = "query=" + String(metric);
-    query += "&start=" + String(startTs);
-    query += "&end=" + String(endTs);
-    query += "&step=" + String(step);
-    query += "s";
-
-    // Read response
-    String contentType = "application/x-www-form-urlencoded";
-    httpclient.post("/api/v1/query_range", contentType, query);
-
-    String response;
-    const size_t bufSize = 4096; // small chunk
-    char buf[bufSize];
-    response = httpclient.responseBody();
-    */
     DynamicJsonDocument doc(96000);
     auto err = deserializeJson(doc, response);
     if (err)
@@ -764,11 +736,6 @@
     }
     else
     {
-      // Serial.println("Query failed: ");
-      // Serial.println(result["data"]["result"]);
-      // Serial.println("=== Prometheus result.data.result ===");
-      serializeJsonPretty(result, Serial); // nicely formatted
-      // Serial.println("\n===============================");
       if (result.containsKey("error"))
       {
         // Serial.println(result["error"].as<const char *>());
