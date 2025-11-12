@@ -102,7 +102,7 @@
   }
 
   void PrometheusClient::setHost(char *host, int port)
-  {
+  { 
     this->prometheusHost = host;
     this->prometheusPort = port;
   }
@@ -116,10 +116,12 @@
   {
     this->usehttps = enabled;
   }
+
   void PrometheusClient::setURI(char *uri)
   {
     this->baseurl = uri;
   }
+
   char * PrometheusClient::getMetric()
   {
     return this->metric;
@@ -130,7 +132,7 @@
     return this->title;
   }
 
-  void PrometheusClient::setthr1(long thr)
+  void PrometheusClient::setThr1(long thr)
   {
     thr1 = thr;
   }
@@ -157,7 +159,7 @@
     }
   }
 
-  void PrometheusClient::setthr2(long thr)
+  void PrometheusClient::setThr2(long thr)
   {
     thr2 = thr;
   }
@@ -177,11 +179,11 @@
     showtrend = enabled;
   };
 
-  long PrometheusClient::getthr1(){
+  long PrometheusClient::getThr1(){
     return this->thr1;
   }
       
-  long PrometheusClient::getthr2(){
+  long PrometheusClient::getThr2(){
     return this->thr2;
   }
 

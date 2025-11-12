@@ -66,10 +66,10 @@ public:
     void setURI(char *uri);
     void setCredentials(char *username_p,char *password_p);
     void setHttps(bool enabled);
-    void setthr1(long thr);
-    void setthr2(long thr);
-    long getthr1();
-    long getthr2();
+    void setThr1(long thr);
+    void setThr2(long thr);
+    long getThr1();
+    long getThr2();
     bool getEnabledThr();
     void setMinVal(long min_val_p);
     void setMaxVal(long max_val_p); 
