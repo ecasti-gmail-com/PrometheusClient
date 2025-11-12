@@ -1,0 +1,72 @@
+ssid=<YOUR SSID>
+password=<YOUR PASSWORD>
+
+prometheushost=192.168.2.8
+prometheusport=9090
+enablehttps=0
+
+0_metric=100*avg(rate(node_cpu_seconds_total{mode='user'}[1m]))
+0_title=Cpu 
+0_type=1
+0_w=100
+0_h=125
+0_x=0
+0_y=25
+0_thr1=50
+0_thr2=80
+0_enableThr=1
+0_enableTrend=0
+0_timerange=3600
+
+1_metric=100 - ((node_memory_MemAvailable_bytes * 100) / node_memory_MemTotal_bytes)
+1_title=Mem Used
+1_type=1
+1_w=100
+1_h=125
+1_x=100
+1_y=25
+1_thr1=50
+1_thr2=65
+1_enableThr=1
+1_enableTrend=0
+1_timerange=3600
+
+2_metric=count(count(node_cpu_seconds_total) by (cpu))
+2_title=Cpu Cores
+2_type=0
+2_w=100
+2_h=100
+2_x=220
+2_y=25
+2_thr1=0
+2_thr2=0
+2_enableThr=0
+2_enableTrend=0
+2_timerange=3600
+
+3_metric=node_thermal_zone_temp{type='cpu-thermal'}
+3_title=Cpu Temp
+3_type=2
+3_w=320
+3_h=90
+3_x=0
+3_y=150
+3_thr1=50
+3_thr2=65
+3_enableThr=1
+3_enableTrend=0
+3_timerange=3600
+
+4_metric=node_memory_MemTotal_bytes/(1000*1000*1000)
+4_title=Mem. GB
+4_type=0
+4_w=320
+4_h=195
+4_x=0
+4_y=25
+4_thr1=0
+4_thr2=0
+4_enableThr=0
+4_enableTrend=0
+4_timerange=3600
+

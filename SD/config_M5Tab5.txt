@@ -1,0 +1,137 @@
+ssid=<YOUR SSID>
+password=<YOUR PASSWORD>
+
+prometheushost=192.168.2.8
+prometheusport=9090
+enablehttps=0
+
+0_metric=100*avg(rate(node_cpu_seconds_total{mode='user'}[1m]))
+0_title=Cpu utilization
+0_type=1
+0_w=250
+0_h=300
+0_x=0
+0_y=50
+0_thr1=50
+0_thr2=80
+0_enableThr=1
+0_enableTrend=0
+0_timerange=3600
+
+1_metric=100 - ((node_memory_MemAvailable_bytes * 100) / node_memory_MemTotal_bytes)
+1_title=Memory Used
+1_type=1
+1_w=250
+1_h=300
+1_x=250
+1_y=50
+1_thr1=50
+1_thr2=65
+1_enableThr=1
+1_enableTrend=0
+1_timerange=3600
+
+2_metric=count(count(node_cpu_seconds_total) by (cpu))
+2_title=Cpu Cores
+2_type=0
+2_w=100
+2_h=100
+2_x=500
+2_y=50
+2_thr1=0
+2_thr2=0
+2_enableThr=0
+2_enableTrend=0
+2_timerange=3600
+
+3_metric=count(container_last_seen)
+3_title=Containers
+3_type=0
+3_w=100
+3_h=100
+3_x=500
+3_y=150
+3_thr1=0
+3_thr2=0
+3_enableThr=0
+3_enableTrend=0
+3_timerange=3600
+
+4_metric=node_memory_MemTotal_bytes/(1000*1000*1000)
+4_title=Mem. GB
+4_type=0
+4_w=100
+4_h=100
+4_x=500
+4_y=250
+4_thr1=0
+4_thr2=0
+4_enableThr=0
+4_enableTrend=0
+4_timerange=3600
+
+5_metric=node_thermal_zone_temp{type='cpu-thermal'}
+5_title=Cpu Temperature - Degree
+5_type=1
+5_w=250
+5_h=300
+5_x=600
+5_y=50
+5_thr1=50
+5_thr2=65
+5_enableThr=1
+5_enableTrend=0
+5_timerange=3600
+
+6_metric=sum(rate(container_network_receive_bytes_total[5m]))/1000
+6_title=Traffix In - KB/S
+6_type=2
+6_w=430
+6_h=150
+6_x=850
+6_y=50
+6_thr1=0
+6_thr2=0
+6_enableThr=0
+6_enableTrend=0
+6_timerange=3600
+
+7_metric=sum(rate(container_network_transmit_bytes_total[5m]))/1000
+7_title=Traffix Out - KB/S
+7_type=2
+7_w=430
+7_h=150
+7_x=850
+7_y=200
+7_thr1=0
+7_thr2=0
+7_enableThr=0
+7_enableTrend=0
+7_timerange=3600
+
+8_metric=scalar(node_load1) * 100 / count(count(node_cpu_seconds_total) by (cpu))
+8_title=Sys Load
+8_type=2
+8_w=900
+8_h=300
+8_x=0
+8_y=350
+8_thr1=50
+8_thr2=80
+8_enableThr=1
+8_enableTrend=0
+8_timerange=3600
+
+9_metric=aa
+9_title=aa
+9_type=2
+9_w=1280
+9_h=670
+9_x=0
+9_y=50
+9_thr1=0
+9_thr2=0
+9_enableThr=0
+9_enableTrend=0
+9_timerange=3600
+
