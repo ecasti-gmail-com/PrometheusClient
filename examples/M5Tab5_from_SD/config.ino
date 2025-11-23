@@ -41,6 +41,8 @@ void read_config() {
   ssid = SD_findString("ssid");
   password =  SD_findString("password");
   enablehttps = SD_findInt("enablehttps");
+  api_username = SD_findInt("api_username");
+  api_username = SD_findInt("api_password");
 
   int ww, hh;
   for (int i = 0; i < 10; i++) {
@@ -66,6 +68,7 @@ void read_config() {
     panel[i].timerange = SD_findInt(String((String(i) + "_timerange").c_str()));
     panel[i].client->setHost((char *)prometheushost.c_str(), prometheusport);
     panel[i].client->setHttps(enablehttps);
+    panel[i].client->setCredentials((char *)api_username.c_str(),(char *)api_password.c_str());
   }
 }
 

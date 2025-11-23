@@ -1,9 +1,12 @@
 ssid=<YOUR SSID>
-password=<YOUR PASSWORD>
+password=<YOUR WIFI PASSWORD>
 
 prometheushost=192.168.2.8
 prometheusport=9090
 enablehttps=0
+api_username=none 
+api_password=none
+
 
 0_metric=100*avg(rate(node_cpu_seconds_total{mode='user'}[1m]))
 0_title=Cpu 

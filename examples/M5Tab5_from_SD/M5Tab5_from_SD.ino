@@ -21,7 +21,8 @@ String password;
 String prometheushost;
 int prometheusport;
 int enablehttps = 0;
-
+String api_username;
+String api_password;
 const char* Timezone = "CET-1CEST,M3.5.0,M10.5.0/3";  // Choose your time zone from: https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
 
 
